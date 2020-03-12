@@ -9,6 +9,8 @@ contract Trading {
         uint id;
         uint startDate;
         uint endDate;
+        uint joinFee;
+        address[] players;
     }
 
     struct TraderInfo {
@@ -18,24 +20,29 @@ contract Trading {
 
     Contest[] contests;
     mapping(address => uint) public contestForTraders;
+    mapping(uint => uint) private payersContestCount;
     mapping(address => TraderInfo) public tradesInfos;
     event logger(uint);
     event logger(bool);
 
-    function joinContest(uint _contestId) public returns (uint, uint, address) {
+    function joinContest(uint _contestId) public returns (uint, uint, address, bool) {
+        bool creation = false;
         if (!containsContest(_contestId)) {
-            contests.push(Contest(_contestId, now, now +  1 minutes));
+            contests.push(Contest(_contestId, now, now +  10 minutes, 0));
+            creation = true;
         } else {
             uint end;
-            (,end) = getContest(_contestId);
+            (,end,) = getContest(_contestId);
             if (end <= now) {
-                return (0, 0, msg.sender);
+                return (0, 0, msg.sender, creation);
             }
         }
         contestForTraders[msg.sender] = _contestId;
+        contestForTraders[msg.sender].players.push(msg.sender);
+        payersContestCount[_contestId]++;
         tradesInfos[msg.sender] = TraderInfo(1000, 0);
 
-        return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
+        return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender, creation);
     }
 
     function containsContest(uint _contestId) private view returns (bool) {
@@ -48,18 +55,60 @@ contract Trading {
         return false;
     }
 
-    function getContest(uint _contestId) public view returns (uint, uint) {
+    function getContest(uint _contestId) public view returns (uint, uint, uint) {
         for (uint index = 0; index < contests.length; index++) {
             if (contests[index].id == _contestId) {
-                return (contests[index].startDate, contests[index].endDate);
+                return (contests[index].startDate, contests[index].endDate, contests[index].joinFee);
             }
         }
 
-        return (0, 0);
+        return (0, 0, 0);
+    }
+
+    function getPlayers(uint _contestId) public view returns (address[]) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                return contests[index].players;
+            }
+        }
+
+        return address[];
     }
 
     function getTraderWallet(address _a) public view returns (uint, uint) {
+        uint end;
+        (,end,) = getContest(contestForTraders[_a]);
+        if (end <= now) {
+            payWinner(_contestId)
+        }
         return (tradesInfos[_a].wallet, tradesInfos[_a].ethers);
+    }
+
+    function payWinner(uint _contestId) private payable {
+        address[] players = getPlayers(_contestId);
+
+        uint winner = players[0];
+        uint winnerTotal = 0;
+
+        for (var index = 0; index < players.length; index++) {
+            uint currency;
+            uint eth;
+
+            (currency, eth) = getTraderWallet(players[index])
+            uint total = currency + eth * getEtherPrice();
+             
+            if (total > winnerTotal) {
+                winner = players[index];
+                winnerTotal = total;
+            }
+        }
+
+        let fee;
+        (,,fee) = getContest(_contestId);
+        uint prize = fee * players.length;
+
+        winner.send(prize * 0.70);
+        owner.send(prize * 0.30);
     }
 
     function trade(uint _amount, uint _contestId, bool buying) public returns (uint, uint, address) {
@@ -76,15 +125,26 @@ contract Trading {
         return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
     }
 
-    function setRoomEnd(uint _contestId, uint _end) public returns (uint, uint) {
+    function setRoomEnd(uint _contestId, uint _end) public returns (uint, uint, uint) {
         for (uint index = 0; index < contests.length; index++) {
             if (contests[index].id == _contestId) {
                 contests[index].endDate = _end;
-                return (contests[index].startDate, contests[index].endDate);
+                return (contests[index].startDate, contests[index].endDate, contests[index].joinFee);
             }
         }
 
-        return (0, 0);
+        return (0, 0, 0);
+    }
+
+    function setRoomFee(uint _contestId, uint _fee) public returns (uint, uint, uint) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                contests[index].joinFee = _fee;
+                return (contests[index].startDate, contests[index].endDate, contests[index].joinFee);
+            }
+        }
+
+        return (0, 0, 0);
     }
 
     function sell(uint _amount, uint _contestId) private returns (uint, uint, address) {
@@ -104,5 +164,6 @@ contract Trading {
     }
     
     function checkContestStatus(uint _contestId) public {
+
     }
 }

@@ -44,6 +44,14 @@ contract("Trading", async accounts => {
     assert.equal(date, contest['1'].toNumber());
   });
 
+  it("should set room fee", async () => {
+    let fee = 100;
+    await instance.setRoomFee(1, fee, {from: accounts[0]});
+    let contest = await instance.getContest(1, {from: accounts[0]});
+    
+    assert.equal(fee, contest['2'].toNumber());
+  });
+
   it("should failed join room", async () => {
     let trader = await instance.joinContest(1, {from: accounts[1]});
     let wallet = await instance.getTraderWallet.call(accounts[1]);
