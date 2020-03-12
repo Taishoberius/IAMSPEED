@@ -7,67 +7,100 @@ contract Trading {
 
     struct Contest {
         uint id;
-        /*uint startDate;
-        uint endDate;*/
+        uint startDate;
+        uint endDate;
     }
 
-    struct Trader {
+    struct TraderInfo {
         uint wallet;
         uint ethers;
-        address trader;
     }
 
     Contest[] contests;
-    mapping(uint => Trader[]) internal contestForTraders;
-    
+    mapping(address => uint) public contestForTraders;
+    mapping(address => TraderInfo) public tradesInfos;
+    event logger(uint);
+    event logger(bool);
 
-    function createContest() public returns (uint) {
-        Contest memory contest = Contest(++competsid);
-        contests.push(contest);
-        joinContest(contest.id);
-        
-        return contest.id;
-    }
-
-    function joinContest(uint _contestId) public {
-        contestForTraders[_contestId].push(Trader(starterWallet, 0, msg.sender));
-    }
-
-    function trade(uint _amount, uint _contestId, bool buying) public {
-        if (buying) {
-            buy(_amount, _contestId);
-            return;
+    function joinContest(uint _contestId) public returns (uint, uint, address) {
+        if (!containsContest(_contestId)) {
+            contests.push(Contest(_contestId, now, now +  1 minutes));
+        } else {
+            uint end;
+            (,end) = getContest(_contestId);
+            if (end <= now) {
+                return (0, 0, msg.sender);
+            }
         }
-    
-        sell(_amount, _contestId);
+        contestForTraders[msg.sender] = _contestId;
+        tradesInfos[msg.sender] = TraderInfo(1000, 0);
+
+        return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
     }
 
-    function buy(uint _amount, uint _contestId) private {
-        Trader memory trader = getTraderForContest(_contestId);
-        require((trader.wallet - _amount) >= 0, "No Tune ma gueule");
-        trader.wallet -= _amount;
-        trader.ethers += _amount * getPrice();
-    }
-
-    function sell(uint _amount, uint _contestId) private {
-        Trader memory trader = getTraderForContest(_contestId);
-        trader.wallet += _amount;
-        trader.ethers -= _amount * getPrice();
-    }
-
-    function getTraderForContest(uint _contestId) private returns (Trader memory) {
-        Trader[] memory traders = contestForTraders[_contestId];
-        for (uint index=0; index < traders.length; index++) {
-            if (traders[index].trader == msg.sender) {
-                return traders[index];
+    function containsContest(uint _contestId) private view returns (bool) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                return true;
             }
         }
 
-        return Trader(1000, 1, msg.sender);
+        return false;
     }
 
-    function getPrice() private returns (uint) {
-        return 2;
+    function getContest(uint _contestId) public view returns (uint, uint) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                return (contests[index].startDate, contests[index].endDate);
+            }
+        }
+
+        return (0, 0);
+    }
+
+    function getTraderWallet(address _a) public view returns (uint, uint) {
+        return (tradesInfos[_a].wallet, tradesInfos[_a].ethers);
+    }
+
+    function trade(uint _amount, uint _contestId, bool buying) public returns (uint, uint, address) {
+        if (buying) {
+            require((tradesInfos[msg.sender].wallet - _amount) > 0);
+            tradesInfos[msg.sender].wallet -= _amount;
+            tradesInfos[msg.sender].ethers += _amount * getEtherPrice();
+
+            return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
+        }
+    
+        tradesInfos[msg.sender].wallet += _amount * getCurrencyPrice();
+        tradesInfos[msg.sender].ethers -= _amount;
+        return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
+    }
+
+    function setRoomEnd(uint _contestId, uint _end) public returns (uint, uint) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                contests[index].endDate = _end;
+                return (contests[index].startDate, contests[index].endDate);
+            }
+        }
+
+        return (0, 0);
+    }
+
+    function sell(uint _amount, uint _contestId) private returns (uint, uint, address) {
+        TraderInfo storage infos = tradesInfos[msg.sender];
+        infos.wallet += _amount * getCurrencyPrice();
+        infos.ethers -= _amount;
+
+        return (infos.wallet, infos.ethers, msg.sender);
+    }
+
+    function getCurrencyPrice() public view returns (uint) {
+        return 1;
+    }
+
+    function getEtherPrice() public view returns (uint) {
+        return 1;
     }
     
     function checkContestStatus(uint _contestId) public {
