@@ -2,7 +2,7 @@ pragma solidity >=0.4.21 <0.7.0;
 // import "./Feeder.sol";
 
 contract Trading {
-    uint harryPotterusModulus = 10 ** 16;
+    uint competsid = 0;
     uint starterWallet = 1000;
 
     struct Contest {
@@ -21,10 +21,12 @@ contract Trading {
     mapping(uint => Trader[]) internal contestForTraders;
     
 
-    function createContest() public {
-        Contest memory contest = Contest(uint(keccak256(abi.encodePacked(now, msg.sender))) % harryPotterusModulus);
+    function createContest() public returns (uint) {
+        Contest memory contest = Contest(++competsid);
         contests.push(contest);
         joinContest(contest.id);
+        
+        return contest.id;
     }
 
     function joinContest(uint _contestId) public {
