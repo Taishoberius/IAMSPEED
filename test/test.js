@@ -11,7 +11,7 @@ contract("Trading", async accounts => {
   });
 
   it("should join contest", async () => {
-    let trader = await instance.joinContest(1, {from: accounts[0], value: Web3.utils.toWei('50', 'ether')});
+    let trader = await instance.joinContest(1, {from: accounts[0], value: Web3.utils.toWei('5', 'ether')});
     let wallet = await instance.getTraderWallet.call(accounts[0]);
     
     assert.equal(1000, wallet['0'].toNumber());
@@ -54,11 +54,8 @@ contract("Trading", async accounts => {
 
   it("should pay winner", async () => {
     let winner = await instance.getWinner(1, {from: accounts[1]});
-
-    console.log(winner);
-    
-
-    await instance.getPrize(winner);
+  
+    await instance.getPrize(winner, {from: accounts[1]});
   
     assert.equal(0, wallet['0'].toNumber());
   });

@@ -26,6 +26,7 @@ contract Trading {
     mapping(address => TraderInfo) public tradesInfos;
     event logger(uint);
     event logger(bool);
+    event logger(address);
 
     function joinContest(uint _contestId) public payable returns (uint, uint, address, bool) {
         bool creation = false;
@@ -97,9 +98,14 @@ contract Trading {
     }
     
     function getPrize(address payable _winner) public {
-        uint contestId = contestForTraders[_winner];
-        require(_winner == getWinner(contestId));
-        _winner.transfer(address(this).balance);
+        require(getWinner(contestForTraders[_winner]) == _winner);
+        _winner.transfer(address(uint160(address(this))).balance);
+    }
+
+    function getAddress() public view returns (uint) {
+        address payable add = address(uint160(address(this)));
+        uint b = add.balance;
+        return b;
     }
 
     function getWinner(uint _contestId) public view returns (address) {
@@ -107,6 +113,7 @@ contract Trading {
 
         address winner = players[0];
         uint winnerTotal = 0;
+        uint winnerIndex = 0;
 
         for (uint index = 0; index < players.length; index++) {
             uint currency;
@@ -118,6 +125,7 @@ contract Trading {
             if (total > winnerTotal) {
                 winner = players[index];
                 winnerTotal = total;
+                winnerIndex = index;
             }
         }
 
