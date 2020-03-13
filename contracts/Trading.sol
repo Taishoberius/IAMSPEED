@@ -99,7 +99,7 @@ contract Trading {
     
     function getPrize(address payable _winner) public {
         require(getWinner(contestForTraders[_winner]) == _winner);
-        _winner.transfer(5 ether * payersContestCount[contestForTraders[_winner]] - 1));
+        _winner.transfer(5 ether * payersContestCount[contestForTraders[_winner]] - 1);
     }
 
     function getAddress() public view returns (uint) {
