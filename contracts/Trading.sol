@@ -27,8 +27,9 @@ contract Trading {
     event logger(uint);
     event logger(bool);
 
-    function joinContest(uint _contestId) public returns (uint, uint, address, bool) {
+    function joinContest(uint _contestId) public returns (uint, uint, address, bool) payable {
         bool creation = false;
+        require(msg.value == 0.01);
         if (!containsContest(_contestId)) {
             address[] memory players;
             contests.push(Contest(_contestId, now, now +  10 minutes, 5, players));
