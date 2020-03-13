@@ -30,10 +30,10 @@ contract Trading {
 
     function joinContest(uint _contestId) public payable returns (uint, uint, address, bool) {
         bool creation = false;
-        require(msg.value > 0);
+        require(msg.value == 5 ether);
         if (!containsContest(_contestId)) {
             address[] memory players;
-            contests.push(Contest(_contestId, now, now +  10 minutes, 5, players));
+            contests.push(Contest(_contestId, now, now +  10 minutes, 5 ether, players));
             creation = true;
         } else {
             uint end;
@@ -99,7 +99,7 @@ contract Trading {
     
     function getPrize(address payable _winner) public {
         require(getWinner(contestForTraders[_winner]) == _winner);
-        _winner.transfer(address(uint160(address(this))).balance);
+        _winner.transfer(5 ether * payersContestCount[contestForTraders[_winner]] - 1));
     }
 
     function getAddress() public view returns (uint) {
@@ -120,7 +120,7 @@ contract Trading {
             uint eth;
 
             (currency, eth) = getTraderWallet(players[index]);
-            uint total = currency + eth * getEtherPrice();
+            uint total = currency + eth * getPrice();
              
             if (total > winnerTotal) {
                 winner = players[index];
@@ -140,7 +140,7 @@ contract Trading {
         if (buying) {
             require((tradesInfos[msg.sender].wallet - _amount) > 0);
             tradesInfos[msg.sender].wallet -= _amount;
-            tradesInfos[msg.sender].ethers += _amount * getEtherPrice();
+            tradesInfos[msg.sender].ethers += _amount * getPrice();
 
             return (tradesInfos[msg.sender].wallet, tradesInfos[msg.sender].ethers, msg.sender);
         }
@@ -164,7 +164,7 @@ contract Trading {
 
     function sell(uint _amount, uint _contestId) private returns (uint, uint, address) {
         TraderInfo storage infos = tradesInfos[msg.sender];
-        infos.wallet += _amount * getCurrencyPrice();
+        infos.wallet += _amount * getPrice();
         infos.ethers -= _amount;
 
         return (infos.wallet, infos.ethers, msg.sender);
