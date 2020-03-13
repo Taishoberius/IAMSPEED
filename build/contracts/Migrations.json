@@ -888,7 +888,8 @@
   },
   "networks": {},
   "schemaVersion": "3.0.23",
-  "updatedAt": "2020-03-13T13:25:37.176Z",
+  "updatedAt": "2020-03-13T16:13:04.297Z",
+  "networkType": "ethereum",
   "devdoc": {
     "methods": {}
   },
