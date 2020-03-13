@@ -66,6 +66,7 @@ contract("Trading", async accounts => {
     // await instance.getPrize(winner);
     
     console.log(prize);
+    console.log(players);
     
   
     assert.equal(0, wallet['0'].toNumber());
