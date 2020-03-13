@@ -1,4 +1,5 @@
 const Trading = artifacts.require("Trading");
+const Web3 = require('web3');
 
 contract("Trading", async accounts => {
   let instance;
@@ -10,7 +11,7 @@ contract("Trading", async accounts => {
   });
 
   it("should join contest", async () => {
-    let trader = await instance.joinContest(1, {from: accounts[0]});
+    let trader = await instance.joinContest(1, {from: accounts[0], value: Web3.utils.toWei('50', 'ether')});
     let wallet = await instance.getTraderWallet.call(accounts[0]);
     
     assert.equal(1000, wallet['0'].toNumber());
@@ -44,16 +45,8 @@ contract("Trading", async accounts => {
     assert.equal(date, contest['1'].toNumber());
   });
 
-  it("should set room fee", async () => {
-    let fee = 100;
-    await instance.setRoomFee(1, fee, {from: accounts[0]});
-    let contest = await instance.getContest(1, {from: accounts[0]});
-    
-    assert.equal(fee, contest['2'].toNumber());
-  });
-
   it("should failed join room", async () => {
-    let trader = await instance.joinContest(1, {from: accounts[1]});
+    let trader = await instance.joinContest(1, {from: accounts[1], value: 1});
     let wallet = await instance.getTraderWallet.call(accounts[1]);
   
     assert.equal(0, wallet['0'].toNumber());
@@ -61,13 +54,11 @@ contract("Trading", async accounts => {
 
   it("should pay winner", async () => {
     let winner = await instance.getWinner(1, {from: accounts[1]});
-    let prize = await instance.getPrizeTotal(1, {from: accounts[1]});
-    let players = await instance.getTotalPlayers(1);
-    // await instance.getPrize(winner);
+
+    console.log(winner);
     
-    console.log(prize);
-    console.log(players);
-    
+
+    await instance.getPrize(winner);
   
     assert.equal(0, wallet['0'].toNumber());
   });

@@ -27,9 +27,9 @@ contract Trading {
     event logger(uint);
     event logger(bool);
 
-    function joinContest(uint _contestId) public returns (uint, uint, address, bool) payable {
+    function joinContest(uint _contestId) public payable returns (uint, uint, address, bool) {
         bool creation = false;
-        require(msg.value == 0.01);
+        require(msg.value > 0);
         if (!containsContest(_contestId)) {
             address[] memory players;
             contests.push(Contest(_contestId, now, now +  10 minutes, 5, players));
@@ -77,6 +77,7 @@ contract Trading {
             }
         }
 
+        require(false);
         return (0, 0, 0);
     }
 
@@ -95,23 +96,10 @@ contract Trading {
         return (tradesInfos[_a].wallet, tradesInfos[_a].ethers);
     }
     
-    
-    function getPrize(address payable _winner) public payable {
+    function getPrize(address payable _winner) public {
         uint contestId = contestForTraders[_winner];
         require(_winner == getWinner(contestId));
-
-        uint prize = getPrizeTotal(contestId);
-
-        _winner.transfer(prize);
-    }
-
-    function getPrizeTotal(uint _contestId) public view returns (uint) {
-        uint fee;
-
-        (,,fee) = getContest(_contestId);
-        uint prize = fee * contests[getContestIndex(_contestId)].players.length;
-
-        return prize;
+        _winner.transfer(address(this).balance);
     }
 
     function getWinner(uint _contestId) public view returns (address) {
@@ -162,17 +150,7 @@ contract Trading {
             }
         }
 
-        return (0, 0, 0);
-    }
-
-    function setRoomFee(uint _contestId, uint _fee) public returns (uint, uint, uint) {
-        for (uint index = 0; index < contests.length; index++) {
-            if (contests[index].id == _contestId) {
-                contests[index].joinFee = _fee;
-                return (contests[index].startDate, contests[index].endDate, contests[index].joinFee);
-            }
-        }
-
+        require(false);
         return (0, 0, 0);
     }
 
@@ -191,12 +169,8 @@ contract Trading {
     function getEtherPrice() public view returns (uint) {
         return 1;
     }
-    
-    function checkContestStatus(uint _contestId) public {
 
-    }
-
-    OSM osmInstance = OSM(0x9fffe440258b79c5d6604001674a4722ffc0f7bc);
+    OSM osmInstance = OSM(0x81FE72B5A8d1A857d176C3E7d5Bd2679A9B85763);
     function getPrice() public view returns (uint) {
         return uint(osmInstance.read()) ;
     }
