@@ -28,7 +28,8 @@ contract Trading {
     function joinContest(uint _contestId) public returns (uint, uint, address, bool) {
         bool creation = false;
         if (!containsContest(_contestId)) {
-            contests.push(Contest(_contestId, now, now +  10 minutes, 0));
+            address[] memory players;
+            contests.push(Contest(_contestId, now, now +  10 minutes, 5, players));
             creation = true;
         } else {
             uint end;
@@ -38,7 +39,7 @@ contract Trading {
             }
         }
         contestForTraders[msg.sender] = _contestId;
-        contestForTraders[msg.sender].players.push(msg.sender);
+        contests[getContestIndex(_contestId)].players.push(msg.sender);
         payersContestCount[_contestId]++;
         tradesInfos[msg.sender] = TraderInfo(1000, 0);
 
@@ -55,6 +56,17 @@ contract Trading {
         return false;
     }
 
+    function getContestIndex(uint _contestId) private view returns (uint) {
+        for (uint index = 0; index < contests.length; index++) {
+            if (contests[index].id == _contestId) {
+                return index;
+            }
+        }
+
+        require(false);
+        return 0;
+    }
+
     function getContest(uint _contestId) public view returns (uint, uint, uint) {
         for (uint index = 0; index < contests.length; index++) {
             if (contests[index].id == _contestId) {
@@ -65,36 +77,51 @@ contract Trading {
         return (0, 0, 0);
     }
 
-    function getPlayers(uint _contestId) public view returns (address[]) {
+    function getPlayers(uint _contestId) public view returns (address[] memory) {
         for (uint index = 0; index < contests.length; index++) {
             if (contests[index].id == _contestId) {
                 return contests[index].players;
             }
         }
 
-        return address[];
+        address[] memory result;    
+        return result;
     }
 
     function getTraderWallet(address _a) public view returns (uint, uint) {
-        uint end;
-        (,end,) = getContest(contestForTraders[_a]);
-        if (end <= now) {
-            payWinner(_contestId)
-        }
         return (tradesInfos[_a].wallet, tradesInfos[_a].ethers);
     }
+    
+    
+    function getPrize(address payable _winner) public payable {
+        uint contestId = contestForTraders[_winner];
+        require(_winner == getWinner(contestId));
 
-    function payWinner(uint _contestId) private payable {
-        address[] players = getPlayers(_contestId);
+        uint prize = getPrizeTotal(contestId);
 
-        uint winner = players[0];
+        _winner.transfer(prize);
+    }
+
+    function getPrizeTotal(uint _contestId) public view returns (uint) {
+        uint fee;
+
+        (,,fee) = getContest(_contestId);
+        uint prize = fee * contests[getContestIndex(_contestId)].players.length;
+
+        return prize;
+    }
+
+    function getWinner(uint _contestId) public view returns (address) {
+        address[] memory players = getPlayers(_contestId);
+
+        address winner = players[0];
         uint winnerTotal = 0;
 
-        for (var index = 0; index < players.length; index++) {
+        for (uint index = 0; index < players.length; index++) {
             uint currency;
             uint eth;
 
-            (currency, eth) = getTraderWallet(players[index])
+            (currency, eth) = getTraderWallet(players[index]);
             uint total = currency + eth * getEtherPrice();
              
             if (total > winnerTotal) {
@@ -103,13 +130,12 @@ contract Trading {
             }
         }
 
-        let fee;
-        (,,fee) = getContest(_contestId);
-        uint prize = fee * players.length;
-
-        winner.send(prize * 0.70);
-        owner.send(prize * 0.30);
+        return winner;
     }
+
+    function getTotalPlayers(uint _contestId) public view returns (uint) {
+        return contests[getContestIndex(_contestId)].players.length;
+    } 
 
     function trade(uint _amount, uint _contestId, bool buying) public returns (uint, uint, address) {
         if (buying) {

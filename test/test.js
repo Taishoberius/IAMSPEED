@@ -58,4 +58,16 @@ contract("Trading", async accounts => {
   
     assert.equal(0, wallet['0'].toNumber());
   });
+
+  it("should pay winner", async () => {
+    let winner = await instance.getWinner(1, {from: accounts[1]});
+    let prize = await instance.getPrizeTotal(1, {from: accounts[1]});
+    let players = await instance.getTotalPlayers(1);
+    // await instance.getPrize(winner);
+    
+    console.log(prize);
+    
+  
+    assert.equal(0, wallet['0'].toNumber());
+  });
 });
