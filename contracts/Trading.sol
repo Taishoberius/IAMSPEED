@@ -1,4 +1,6 @@
 pragma solidity >=0.4.21 <0.7.0;
+
+import "./OSM.sol";
 // import "./Feeder.sol";
 
 contract Trading {
@@ -165,5 +167,10 @@ contract Trading {
     
     function checkContestStatus(uint _contestId) public {
 
+    }
+
+    OSM osmInstance = OSM(0x9fffe440258b79c5d6604001674a4722ffc0f7bc);
+    function getPrice() public view returns (uint) {
+        return uint(osmInstance.read()) ;
     }
 }
